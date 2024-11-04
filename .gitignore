@@ -1,1 +1,3 @@
-images/*.tif
+images/*
+dataraw/*
+yolo11x.pt

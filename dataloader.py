@@ -1,13 +1,25 @@
+import keras.backend
 import numpy as np
 import keras
 import json
+import os
+import matplotlib.pyplot as plt
+
+#make keras use gpu
 
 # Custom DataLoader class inheriting from keras.utils.Sequence
 class DataLoaderFactory():
     def __init__(self):
         self.image_paths,self.labels = self.load_labelled_img_paths()
         self.n_labelled = len(self.labels)
+        self.unlabelled_image_paths = self.load_unlabelled_img_paths(self.image_paths)
 
+    def load_unlabelled_img_paths(self,labelled_image_paths):
+        unlabelled_image_paths = []
+        for img in os.listdir("images"):
+            if img not in labelled_image_paths:
+                unlabelled_image_paths.append("images/"+img)
+        return unlabelled_image_paths
     def load_labelled_img_paths(self):
         with open("labels/_labels.json","r") as f:
             labels = json.load(f)
@@ -73,8 +85,15 @@ val_data_loader = data_loader.get_dataloader(n_val)
 test_data_loader = data_loader.get_dataloader(n_test)
 
 # Example of how to use the custom data loader with a Keras model
+augmentation = keras.Sequential([
+    keras.layers.RandomFlip("horizontal"),
+    keras.layers.RandomRotation(0.1),
+    keras.layers.RandomZoom(0.1),
+    keras.layers.RandomTranslation(0.1,0.1),
+])
 model = keras.Sequential([
     keras.layers.InputLayer(input_shape=(224, 224, 1)),
+    augmentation,
     keras.layers.Conv2D(8, (9, 9), activation='relu'),
     keras.layers.MaxPooling2D(),
     keras.layers.BatchNormalization(),
@@ -84,7 +103,7 @@ model = keras.Sequential([
     keras.layers.Flatten(),
     keras.layers.Dense(128,activation='relu'),
     keras.layers.Dense(128,activation='relu'),
-    keras.layers.Dense(1, activation="sigmoid")
+    keras.layers.Dense(1, activation="linear")
 ])
 
 model.compile(optimizer='adam', loss = "mse", metrics=['accuracy'])
@@ -93,3 +112,15 @@ model.compile(optimizer='adam', loss = "mse", metrics=['accuracy'])
 model.fit(train_data_loader, epochs=10,validation_data=val_data_loader)
 print("Evaluating model")
 model.evaluate(test_data_loader)
+
+rand_unlabelled = np.random.choice(data_loader.unlabelled_image_paths,9)
+images = []
+for image in rand_unlabelled:
+    images.append(keras.utils.img_to_array(keras.utils.load_img(image, target_size=(224, 224),keep_aspect_ratio=True,color_mode="grayscale")))
+fig,ax = plt.subplots(3,3)
+for i in range(3):
+    for j in range(3):
+        ax[i,j].imshow(images[i*3+j])
+        pred = model(np.expand_dims(images[i*3+j]/255.0,0))
+        ax[i,j].set_title(f"Prediction: {pred*40}")
+plt.show()

@@ -23,7 +23,7 @@ files = get_files("dataraw")
 
 for i in range(len(files)):
     print(f"{i+1}/{len(files)}")
-    filename = str(i) + ".tif"
-    os.rename(files[i], "images/"+filename)
+    filenamejpg = str(i) + ".jpg"
+    os.system(f"ffmpeg -i {files[i]} images/{filenamejpg}")
 os.system("rm -r dataraw")
 print("Done!")
