@@ -25,9 +25,10 @@ class DataLoaderFactory():
             labels = json.load(f)
         image_paths = []
         labels_list = []
-        for k,v in labels.items():
+        labelled = np.random.permutation(list(labels.keys()))
+        for k in labelled:
             image_paths.append("images/"+k)
-            labels_list.append(v)
+            labels_list.append(labels[k])
         print(f"Loaded {len(labels_list)} labels")
         return image_paths,labels_list
     
@@ -104,20 +105,21 @@ model = keras.Sequential([
 
 if True:
     model.compile(optimizer='adam', loss = "mse")
-    model.fit(train_data_loader, epochs=5,validation_data=val_data_loader)
+    model.fit(train_data_loader, epochs=10,validation_data=val_data_loader)
     print("Testing model")
     model.evaluate(test_data_loader)
 
 #visualize 
-fig,ax = plt.subplots(4,2,figsize=(20,20))
-images = random.choices(data_loader.unlabelled_image_paths,k=4)
+show = 8
+images = random.choices(data_loader.unlabelled_image_paths,k=show)
+fig,ax = plt.subplots(4,4,figsize=(20,20))
 for i in range(4):
-    img = keras.utils.load_img(images[i], target_size=(224, 224),keep_aspect_ratio=True,color_mode="grayscale")
-    img = keras.utils.img_to_array(img) / 255.0
-    heatmap = model.predict(img.reshape(1,224,224,1))[0]
-    ax[i,0].imshow(img.reshape(224,224),cmap="gray")
-    ax[i,1].imshow(heatmap,cmap="gray")
-    ax[i,0].axis("off")
-    ax[i,1].axis("off")
+    for j in range(2):
+        img = keras.utils.load_img(images[i*2+j], target_size=(224, 224),keep_aspect_ratio=True,color_mode="grayscale")
+        img = keras.utils.img_to_array(img) / 255.0
+        batch = img.reshape(1, 224, 224, 1)
+        heatmap = model.predict(batch)[0]
+        ax[i,j*2].imshow(img)
+        ax[i,j*2+1].imshow(heatmap)
 
 plt.show()
