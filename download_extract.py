@@ -14,8 +14,12 @@ def get_files(path):
             if file.endswith(".tif"):
                 files.append(os.path.join(r, file))
     return files
-if False:
-    os.system("wget http://www.svcl.ucsd.edu/projects/anomaly/UCSD_Anomaly_Dataset.tar.gz -O compressed.tar.gz")
+
+
+if True:
+    os.system(
+        "wget http://www.svcl.ucsd.edu/projects/anomaly/UCSD_Anomaly_Dataset.tar.gz -O compressed.tar.gz"
+    )
     os.mkdir("dataraw")
     os.system("tar -xf compressed.tar.gz -C dataraw")
     os.remove("compressed.tar.gz")
@@ -26,10 +30,15 @@ for i in range(len(files)):
     print(f"{i+1}/{len(files)}")
     filenamejpg = str(i) + ".jpg"
     try:
-        img = keras.utils.load_img(files[i], target_size=(224, 224),keep_aspect_ratio=True,color_mode="grayscale")
+        img = keras.utils.load_img(
+            files[i],
+            target_size=(224, 224),
+            keep_aspect_ratio=True,
+            color_mode="grayscale",
+        )
         img.save("images/" + filenamejpg)
     except:
-        print("Error with file",files[i])
+        print("Error with file", files[i])
         continue
 os.system("rm -r dataraw")
 print("Done!")
