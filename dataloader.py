@@ -1,19 +1,19 @@
-import keras.backend
 import numpy as np
 import keras
 import json
 import os
+import cv2
 import matplotlib.pyplot as plt
+import random
 
-#make keras use gpu
-
-# Custom DataLoader class inheriting from keras.utils.Sequence
 class DataLoaderFactory():
     def __init__(self):
         self.image_paths,self.labels = self.load_labelled_img_paths()
         self.n_labelled = len(self.labels)
         self.unlabelled_image_paths = self.load_unlabelled_img_paths(self.image_paths)
-
+        self.image_size = self.get_image_size()
+    def get_image_size(self):
+        return cv2.imread(self.image_paths[0]).shape[0:2]
     def load_unlabelled_img_paths(self,labelled_image_paths):
         unlabelled_image_paths = []
         for img in os.listdir("images"):
@@ -21,7 +21,7 @@ class DataLoaderFactory():
                 unlabelled_image_paths.append("images/"+img)
         return unlabelled_image_paths
     def load_labelled_img_paths(self):
-        with open("labels/_labels.json","r") as f:
+        with open("labels/labelled.json","r") as f:
             labels = json.load(f)
         image_paths = []
         labels_list = []
@@ -41,13 +41,21 @@ class DataLoaderFactory():
         self.image_paths = self.image_paths[n_samples:]
         self.labels = self.labels[n_samples:]
         self.n_labelled -= n_samples
-        return PedestrianDataIterator(image_paths = iterator_images,labels = iterator_labels)
+        return PedestrianDataIterator(self.image_size,image_paths = iterator_images,labels = iterator_labels)
+    
+def generate_heatmap(image_size,boxes):
+    heatmap = np.zeros((image_size[0]//8,image_size[1]//8))
+    for box in boxes:
+        x,y,_,_ = box
+        x = int(x//8)
+        y = int(y//8)
+        heatmap[y,x] = 1
+    return heatmap
 
 class PedestrianDataIterator(keras.utils.Sequence):
-    def __init__(self, batch_size=8, image_size=(224, 224), max_count=40, image_paths = None,labels=None):
+    def __init__(self, image_size,batch_size=8, image_paths = None,labels=None):
         self.batch_size = batch_size
         self.image_size = image_size
-        self.max_count = max_count
         self.image_paths = image_paths
         self.labels = labels
             
@@ -57,24 +65,20 @@ class PedestrianDataIterator(keras.utils.Sequence):
     def __getitem__(self, index):
         batch_image_paths = self.image_paths[index * self.batch_size: (index + 1) * self.batch_size]
         batch_labels = self.labels[index * self.batch_size: (index + 1) * self.batch_size]
-        X, y = self.__data_generation(batch_image_paths, batch_labels)
-        return X, y
-
+        return self.__data_generation(batch_image_paths, batch_labels)
+    
     def __data_generation(self, batch_image_paths, batch_labels):
-        X = np.empty((self.batch_size, *self.image_size, 1))  # Assuming 3-channel RGB images
-        y = np.empty((self.batch_size), dtype=int)
-
+        X = np.empty((self.batch_size, *self.image_size, 1)) 
+        heatmap_size = (self.image_size[0]//8,self.image_size[1]//8)
+        y = np.empty((self.batch_size,*heatmap_size), dtype=float)
+        
         for i, file_path in enumerate(batch_image_paths):
             img = keras.utils.img_to_array(keras.utils.load_img(file_path, target_size=self.image_size,keep_aspect_ratio=True,color_mode="grayscale")) / 255.0  # Normalize the image to [0, 1]
             X[i,] = img
-            y[i] = batch_labels[i] / self.max_count
+            y[i,] = generate_heatmap(img.shape[0:2],batch_labels[i])
 
         return X, y
 
-
-# Example usage:
-
-# Create a custom data loader
 data_loader = DataLoaderFactory()
 n = data_loader.n_labelled
 n_train = int(n*3/4)
@@ -84,43 +88,36 @@ train_data_loader = data_loader.get_dataloader(n_train)
 val_data_loader = data_loader.get_dataloader(n_val)
 test_data_loader = data_loader.get_dataloader(n_test)
 
-# Example of how to use the custom data loader with a Keras model
-augmentation = keras.Sequential([
-    keras.layers.RandomFlip("horizontal"),
-    keras.layers.RandomRotation(0.1),
-    keras.layers.RandomZoom(0.1),
-    keras.layers.RandomTranslation(0.1,0.1),
-])
 model = keras.Sequential([
     keras.layers.InputLayer(input_shape=(224, 224, 1)),
-    augmentation,
-    keras.layers.Conv2D(8, (9, 9), activation='relu'),
-    keras.layers.MaxPooling2D(),
-    keras.layers.BatchNormalization(),
-    keras.layers.Conv2D(8, (5, 5), activation='relu'),
-    keras.layers.MaxPooling2D(),
-    keras.layers.BatchNormalization(),
-    keras.layers.Flatten(),
-    keras.layers.Dense(128,activation='relu'),
-    keras.layers.Dense(128,activation='relu'),
-    keras.layers.Dense(1, activation="linear")
+    keras.layers.Conv2D(16, (5, 5), activation='relu',padding="same"),
+    keras.layers.Conv2D(16, (5, 5), activation='relu',padding="same"),
+    keras.layers.AvgPool2D((2, 2)),
+    keras.layers.Conv2D(16, (5, 5), activation='relu',padding="same"),
+    keras.layers.Conv2D(16, (5, 5), activation='relu',padding="same"),
+    keras.layers.AvgPool2D((2, 2)),
+    keras.layers.Conv2D(16, (5, 5), activation='relu',padding="same"),
+    keras.layers.Conv2D(16, (5, 5), activation='relu',padding="same"),
+    keras.layers.AvgPool2D((2, 2)),
+    keras.layers.Conv2D(1, (1, 1), activation='relu',padding="same"),
 ])
 
-model.compile(optimizer='adam', loss = "mse", metrics=['accuracy'])
+if True:
+    model.compile(optimizer='adam', loss = "mse")
+    model.fit(train_data_loader, epochs=5,validation_data=val_data_loader)
+    print("Testing model")
+    model.evaluate(test_data_loader)
 
-# Train the model using the custom data loader7
-model.fit(train_data_loader, epochs=10,validation_data=val_data_loader)
-print("Evaluating model")
-model.evaluate(test_data_loader)
+#visualize 
+fig,ax = plt.subplots(4,2,figsize=(20,20))
+images = random.choices(data_loader.unlabelled_image_paths,k=4)
+for i in range(4):
+    img = keras.utils.load_img(images[i], target_size=(224, 224),keep_aspect_ratio=True,color_mode="grayscale")
+    img = keras.utils.img_to_array(img) / 255.0
+    heatmap = model.predict(img.reshape(1,224,224,1))[0]
+    ax[i,0].imshow(img.reshape(224,224),cmap="gray")
+    ax[i,1].imshow(heatmap,cmap="gray")
+    ax[i,0].axis("off")
+    ax[i,1].axis("off")
 
-rand_unlabelled = np.random.choice(data_loader.unlabelled_image_paths,9)
-images = []
-for image in rand_unlabelled:
-    images.append(keras.utils.img_to_array(keras.utils.load_img(image, target_size=(224, 224),keep_aspect_ratio=True,color_mode="grayscale")))
-fig,ax = plt.subplots(3,3)
-for i in range(3):
-    for j in range(3):
-        ax[i,j].imshow(images[i*3+j])
-        pred = model(np.expand_dims(images[i*3+j]/255.0,0))
-        ax[i,j].set_title(f"Prediction: {pred*40}")
 plt.show()
