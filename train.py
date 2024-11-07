@@ -10,8 +10,6 @@ import sys
 os.environ["KERAS_BACKEND"] = "jax"
 os.environ["JAX_PLATFORM_NAME"] = "gpu"
 import keras
-
-os.environ["QT_QPA_PLATFORM"] = "eglfs"
 import matplotlib.pyplot as plt
 
 
@@ -19,18 +17,10 @@ class DataLoaderFactory:
     def __init__(self):
         self.image_paths, self.labels = self.load_labelled_img_paths()
         self.n_labelled = len(self.labels)
-        self.unlabelled_image_paths = self.load_unlabelled_img_paths(self.image_paths)
         self.image_size = self.get_image_size()
 
     def get_image_size(self):
         return cv2.imread(self.image_paths[0]).shape[0:2]
-
-    def load_unlabelled_img_paths(self, labelled_image_paths):
-        unlabelled_image_paths = []
-        for img in os.listdir("images"):
-            if img not in labelled_image_paths:
-                unlabelled_image_paths.append("images/" + img)
-        return unlabelled_image_paths
 
     def load_labelled_img_paths(self):
         with open("labels/labelled.json", "r") as f:
@@ -54,9 +44,7 @@ class DataLoaderFactory:
         self.image_paths = self.image_paths[n_samples:]
         self.labels = self.labels[n_samples:]
         self.n_labelled -= n_samples
-        return PedestrianDataIterator(
-            self.image_size, image_paths=iterator_images, labels=iterator_labels
-        )
+        return PedestrianDataIterator(self.image_size, image_paths=iterator_images, labels=iterator_labels)
 
 
 def generate_heatmap(image_size, boxes):
@@ -70,9 +58,7 @@ def generate_heatmap(image_size, boxes):
 
 
 class PedestrianDataIterator(keras.utils.Sequence):
-    def __init__(
-        self, image_size, batch_size=8, image_paths=None, labels=None, **kwargs
-    ):
+    def __init__(self, image_size, batch_size=8, image_paths=None, labels=None, **kwargs):
         self.batch_size = batch_size
         self.image_size = image_size
         self.image_paths = image_paths
@@ -83,12 +69,8 @@ class PedestrianDataIterator(keras.utils.Sequence):
         return int(len(self.image_paths) / self.batch_size)
 
     def __getitem__(self, index):
-        batch_image_paths = self.image_paths[
-            index * self.batch_size : (index + 1) * self.batch_size
-        ]
-        batch_labels = self.labels[
-            index * self.batch_size : (index + 1) * self.batch_size
-        ]
+        batch_image_paths = self.image_paths[index * self.batch_size : (index + 1) * self.batch_size]
+        batch_labels = self.labels[index * self.batch_size : (index + 1) * self.batch_size]
         return self.__data_generation(batch_image_paths, batch_labels)
 
     def __data_generation(self, batch_image_paths, batch_labels):
@@ -180,28 +162,23 @@ if len(sys.argv) == 3:
     model.compile(optimizer="adam", loss="mse")
     if sys.argv[1] == "train":
         print(f"Training model for {int(sys.argv[2])} epochs")
-
-        model.fit(
-            train_data_loader, epochs=int(sys.argv[2]), validation_data=val_data_loader
-        )
+        model.fit(train_data_loader, epochs=int(sys.argv[2]), validation_data=val_data_loader)
         print("Testing model")
         model.evaluate(test_data_loader)
         model.save("model.keras")
     if sys.argv[1] == "infer":
+        test_data_loader.batch_size = 1
         show = int(sys.argv[2])
-        images = random.choices(data_loader.unlabelled_image_paths, k=show)
-        print(f"Choosing from {len(data_loader.unlabelled_image_paths)} images")
+        images = []
+        heatmaps = []
+        choose = random.sample(range(len(test_data_loader)), show)
+        for i in choose:
+            img, heatmap = test_data_loader.__getitem__(i)
+            heatmap = model.predict(img)[0]
+            images.append(img)
+            heatmaps.append(heatmap)
         fig, ax = plt.subplots(show, 2)
         for i in range(show):
-            img = keras.utils.load_img(
-                images[i],
-                target_size=(224, 224),
-                keep_aspect_ratio=True,
-                color_mode="grayscale",
-            )
-            img = keras.utils.img_to_array(img) / 255.0
-            batch = img.reshape(1, 224, 224, 1)
-            heatmap = model.predict(batch)[0]
-            ax[i, 0].imshow(img)
-            ax[i, 1].imshow(heatmap)
+            ax[i, 0].imshow(images[i][0])
+            ax[i, 1].imshow(heatmaps[i])
         plt.show()
