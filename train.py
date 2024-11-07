@@ -1,8 +1,10 @@
+#!python
 import numpy as np
 import os
 import json
 import cv2
 import random
+import sys
 
 # keras backend jax
 os.environ["KERAS_BACKEND"] = "jax"
@@ -121,43 +123,85 @@ train_data_loader = data_loader.get_dataloader(n_train)
 val_data_loader = data_loader.get_dataloader(n_val)
 test_data_loader = data_loader.get_dataloader(n_test)
 
-model = keras.Sequential(
-    [
-        keras.layers.InputLayer(shape=(224, 224, 1)),
-        keras.layers.Conv2D(16, (5, 5), activation="relu", padding="same"),
-        keras.layers.Conv2D(16, (5, 5), activation="relu", padding="same"),
-        keras.layers.AvgPool2D((2, 2)),
-        keras.layers.Conv2D(16, (5, 5), activation="relu", padding="same"),
-        keras.layers.Conv2D(16, (5, 5), activation="relu", padding="same"),
-        keras.layers.AvgPool2D((2, 2)),
-        keras.layers.Conv2D(16, (5, 5), activation="relu", padding="same"),
-        keras.layers.Conv2D(16, (5, 5), activation="relu", padding="same"),
-        keras.layers.AvgPool2D((2, 2)),
-        keras.layers.Conv2D(1, (1, 1), activation="relu", padding="same"),
-    ]
-)
 
-if True:
+if os.path.exists("model.keras"):
+    print("Loading model from file")
+    model = keras.models.load_model("model.keras")
+
+else:
+    print("Creating new model")
+    model = keras.Sequential(
+        [
+            keras.layers.InputLayer(shape=(224, 224, 1)),
+            keras.layers.Conv2D(
+                16,
+                (5, 5),
+                activation="relu",
+                padding="same",
+            ),
+            keras.layers.Conv2D(
+                16,
+                (5, 5),
+                activation="relu",
+                padding="same",
+            ),
+            keras.layers.AvgPool2D((2, 2)),
+            keras.layers.Conv2D(
+                16,
+                (5, 5),
+                activation="relu",
+                padding="same",
+            ),
+            keras.layers.Conv2D(
+                16,
+                (5, 5),
+                activation="relu",
+                padding="same",
+            ),
+            keras.layers.AvgPool2D((2, 2)),
+            keras.layers.Conv2D(
+                16,
+                (5, 5),
+                activation="relu",
+                padding="same",
+            ),
+            keras.layers.Conv2D(
+                16,
+                (5, 5),
+                activation="relu",
+                padding="same",
+            ),
+            keras.layers.AvgPool2D((2, 2)),
+            keras.layers.Conv2D(1, (1, 1), activation="relu", padding="same"),
+        ]
+    )
+
+if len(sys.argv) == 3:
     model.compile(optimizer="adam", loss="mse")
-    model.fit(train_data_loader, epochs=15, validation_data=val_data_loader)
-    print("Testing model")
-    model.evaluate(test_data_loader)
+    if sys.argv[1] == "train":
+        print(f"Training model for {int(sys.argv[2])} epochs")
 
-# visualize
-show = 8
-images = random.choices(data_loader.unlabelled_image_paths, k=show)
-fig, ax = plt.subplots(4, 4, figsize=(20, 20))
-for i in range(4):
-    for j in range(2):
-        img = keras.utils.load_img(
-            images[i * 2 + j],
-            target_size=(224, 224),
-            keep_aspect_ratio=True,
-            color_mode="grayscale",
+        model.fit(
+            train_data_loader, epochs=int(sys.argv[2]), validation_data=val_data_loader
         )
-        img = keras.utils.img_to_array(img) / 255.0
-        batch = img.reshape(1, 224, 224, 1)
-        heatmap = model.predict(batch)[0]
-        ax[i, j * 2].imshow(img)
-        ax[i, j * 2 + 1].imshow(heatmap)
-plt.show()
+        print("Testing model")
+        model.evaluate(test_data_loader)
+        model.save("model.keras")
+    if sys.argv[1] == "infer":
+        show = int(sys.argv[2])
+        images = random.choices(data_loader.unlabelled_image_paths, k=show)
+        print(f"Choosing from {len(data_loader.unlabelled_image_paths)} images")
+        fig, ax = plt.subplots(show, 2)
+        for i in range(show):
+            img = keras.utils.load_img(
+                images[i],
+                target_size=(224, 224),
+                keep_aspect_ratio=True,
+                color_mode="grayscale",
+            )
+            img = keras.utils.img_to_array(img) / 255.0
+            batch = img.reshape(1, 224, 224, 1)
+            heatmap = model.predict(batch)[0]
+            ax[i, 0].imshow(img)
+            ax[i, 1].imshow(heatmap)
+        plt.show()
