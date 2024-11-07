@@ -6,11 +6,13 @@ import cv2
 import random
 import sys
 
+
 # keras backend jax
 os.environ["KERAS_BACKEND"] = "jax"
 os.environ["JAX_PLATFORM_NAME"] = "gpu"
 import keras
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import ImageGrid
 
 
 class DataLoaderFactory:
@@ -167,18 +169,24 @@ if len(sys.argv) == 3:
         model.evaluate(test_data_loader)
         model.save("model.keras")
     if sys.argv[1] == "infer":
+
         test_data_loader.batch_size = 1
         show = int(sys.argv[2])
-        images = []
-        heatmaps = []
+        if show % 2 != 0:
+            show += 1
+        images_heatmaps = []
         choose = random.sample(range(len(test_data_loader)), show)
         for i in choose:
             img, heatmap = test_data_loader.__getitem__(i)
             heatmap = model.predict(img)[0]
-            images.append(img)
-            heatmaps.append(heatmap)
-        fig, ax = plt.subplots(show, 2)
-        for i in range(show):
-            ax[i, 0].imshow(images[i][0])
-            ax[i, 1].imshow(heatmaps[i])
+            images_heatmaps.append(img[0])
+            images_heatmaps.append(heatmap)
+        w = 20
+        h = 20
+        fig = plt.figure(figsize=(8, 8))
+        columns = 4
+        rows = show // 2
+        for i in range(1, columns * rows + 1):
+            fig.add_subplot(rows, columns, i)
+            plt.imshow(images_heatmaps[i - 1])
         plt.show()
