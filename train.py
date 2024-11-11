@@ -10,6 +10,7 @@ os.environ["JAX_PLATFORM_NAME"] = "cpu"
 import keras
 import matplotlib.pyplot as plt
 from dataloader import DataLoaderFactory, UnlabelledDataIterator
+from model import FomoModel
 
 img_dir = "images"
 test_dir = "images_test"
@@ -21,51 +22,7 @@ if os.path.exists("model.keras"):
 
 else:
     print("Creating new model")
-    model = keras.Sequential(
-        [
-            keras.layers.InputLayer(shape=(224, 224, 1)),
-            keras.layers.Conv2D(
-                16,
-                (5, 5),
-                activation="relu",
-                padding="same",
-            ),
-            keras.layers.Conv2D(
-                16,
-                (5, 5),
-                activation="relu",
-                padding="same",
-            ),
-            keras.layers.AvgPool2D((2, 2)),
-            keras.layers.Conv2D(
-                16,
-                (5, 5),
-                activation="relu",
-                padding="same",
-            ),
-            keras.layers.Conv2D(
-                16,
-                (5, 5),
-                activation="relu",
-                padding="same",
-            ),
-            keras.layers.AvgPool2D((2, 2)),
-            keras.layers.Conv2D(
-                16,
-                (5, 5),
-                activation="relu",
-                padding="same",
-            ),
-            keras.layers.Conv2D(
-                16,
-                (5, 5),
-                activation="relu",
-                padding="same",
-            ),
-            keras.layers.AvgPool2D((2, 2)),
-            keras.layers.Conv2D(1, (1, 1), activation="relu", padding="same"),
-        ]
-    )
+    model = FomoModel()
 
 
 def plot_model_input_output(model, data_loader,n,labelled=True):
@@ -90,9 +47,10 @@ def plot_model_input_output(model, data_loader,n,labelled=True):
     plt.show()
 
 if len(sys.argv) == 3:
-    model.compile(optimizer="adam", loss="mse")
-    model.summary()
     if sys.argv[1] in ("train", "infer"):
+
+        model.compile(optimizer="adam", loss="mse")
+        model.summary()
         data_loader = DataLoaderFactory()
         n = data_loader.n_labelled
         n_train = int(n * 3 / 4)
@@ -116,8 +74,12 @@ if len(sys.argv) == 3:
         dataloader = UnlabelledDataIterator("images_test")
         plot_model_input_output(model, dataloader, int(sys.argv[2]),labelled=False)
 elif len(sys.argv) == 2:
+    input = keras.Input(batch_shape=(1,96, 96, 1))
+    output = model(input)
+    model_ = keras.Model(inputs=input, outputs=output)
     if sys.argv[1] == "export":
-        converter = tf.lite.TFLiteConverter.from_keras_model(model)
+        converter = tf.lite.TFLiteConverter.from_keras_model(model_)
         tf_lite_model = converter.convert()
         with open("model.tflite", "wb") as f:
             f.write(tf_lite_model)
+        os.system("xxd -i model.tflite > model.h")
