@@ -6,17 +6,19 @@ import cv2
 import keras
 import sys
 
+out_dir = "images_test"
+in_dir = "dataraw"
 
 def get_files(path):
     files = []
     for r, d, f in os.walk(path):
         for file in f:
-            if file.endswith(".tif"):
+            if file.endswith(".tif") or file.endswith(".jpg"):
                 files.append(os.path.join(r, file))
     return files
 
 
-if True:
+if False:
     os.system(
         "wget http://www.svcl.ucsd.edu/projects/anomaly/UCSD_Anomaly_Dataset.tar.gz -O compressed.tar.gz"
     )
@@ -24,7 +26,7 @@ if True:
     os.system("tar -xf compressed.tar.gz -C dataraw")
     os.remove("compressed.tar.gz")
     os.mkdir("images")
-files = get_files("dataraw")
+files = get_files(in_dir)
 
 for i in range(len(files)):
     print(f"{i+1}/{len(files)}")
@@ -36,9 +38,8 @@ for i in range(len(files)):
             keep_aspect_ratio=True,
             color_mode="grayscale",
         )
-        img.save("images/" + filenamejpg)
+        img.save(f"{out_dir}/{filenamejpg}")
     except:
         print("Error with file", files[i])
         continue
-os.system("rm -r dataraw")
 print("Done!")
