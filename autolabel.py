@@ -3,13 +3,12 @@ import cv2
 import os
 import json
 
-base = "/home/benni/dev/learning_to_count"
+base = "."
 images_base = f"{base}/images"
 image_files = {f"{images_base}/{x}" for x in os.listdir(images_base)}
 tot_files = len(image_files)
 
 model = YOLO("yolo11x.pt", task="predict")
-model.to("cuda")
 
 with open(f"{base}/labels/labelled.json", "r") as f:
     labelled = json.load(f)

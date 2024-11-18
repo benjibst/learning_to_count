@@ -1,7 +1,9 @@
+
 import numpy as np
 import os
 import random
 import sys
+
 
 import tensorflow as tf
 # keras backend jax
@@ -10,55 +12,70 @@ os.environ["JAX_PLATFORM_NAME"] = "cpu"
 import keras
 import matplotlib.pyplot as plt
 from dataloader import DataLoaderFactory, UnlabelledDataIterator
-from model import FomoModel
+from model import run_model
 
 img_dir = "images"
 test_dir = "images_test"
-
+loaded = False
 
 if os.path.exists("model.keras"):
     print("Loading model from file")
+    loaded = True
     model = keras.models.load_model("model.keras")
 
 else:
     print("Creating new model")
-    model = FomoModel()
+    model = run_model
 
 
+def plot_img_grid(images,img_per_col = 3):
+    columns = 2
+    rows = len(images) // (columns * img_per_col)
+    print(f"Plotting {len(images)} images on a {rows}x{columns*img_per_col} grid")
+    for i in range(1, columns*img_per_col * rows + 1):
+        plt.subplot(rows, columns*img_per_col, i)
+        plt.imshow(images[i-1])
+    plt.show()
 def plot_model_input_output(model, data_loader,n,labelled=True):
     if n % 2 != 0:
         n += 1
     images_heatmaps = []
+
     choose = random.sample(range(len(data_loader)), n)
     for i in choose:
         if labelled:
             img, heatmap = data_loader.__getitem__(i)
+            images_heatmaps.append(heatmap[0])
         else:
             img = data_loader.__getitem__(i)
-        heatmap = model.predict(img)[0]
         images_heatmaps.append(img[0])
-        images_heatmaps.append(heatmap)
-    fig = plt.figure(figsize=(8, 8))
-    columns = 4
-    rows = n // 2
-    for i in range(1, columns * rows + 1):
-        fig.add_subplot(rows, columns, i)
-        plt.imshow(images_heatmaps[i - 1])
+        heatmap_pred = model.predict(img)[0]
+        images_heatmaps.append(heatmap_pred)
+    if(labelled):
+        plot_img_grid(images_heatmaps)
+    else:
+        plot_img_grid(images_heatmaps,2)
     plt.show()
 
+data_loader = DataLoaderFactory(image_size=(96, 96),heatmap_div=4)
+n = data_loader.n_labelled / 8
+n_train,n_val,n_test = int(n*6),int(n),int(n)
+train_data_loader = data_loader.get_dataloader(n_train)
+val_data_loader = data_loader.get_dataloader(n_val)
+test_data_loader = data_loader.get_dataloader(n_test)
 if len(sys.argv) == 3:
     if sys.argv[1] in ("train", "infer"):
-
+        if not loaded:
+            input = keras.Input(batch_shape=(None, 96, 96, 1))
+            output = run_model(input)
+            model = keras.Model(inputs=input, outputs=output)
         model.compile(optimizer="adam", loss="mse")
         model.summary()
-        data_loader = DataLoaderFactory()
         n = data_loader.n_labelled
-        n_train = int(n * 3 / 4)
-        n_val = int(n * 1 / 8)
-        n_test = int(n * 1 / 8)
-        train_data_loader = data_loader.get_dataloader(n_train)
-        val_data_loader = data_loader.get_dataloader(n_val)
-        test_data_loader = data_loader.get_dataloader(n_test)
+        
+        print(f"Training on {len(train_data_loader)} images")
+        print(f"Validating on {len(train_data_loader)} images")
+        print(f"Testing on {len(train_data_loader)} images")
 
         if sys.argv[1] == "train":
             print(f"Training model for {int(sys.argv[2])} epochs")
@@ -67,19 +84,23 @@ if len(sys.argv) == 3:
             model.evaluate(test_data_loader)
             model.save("model.keras")
         else:
-            test_data_loader.batch_size = 1
-            plot_model_input_output(model, test_data_loader, int(sys.argv[2]))
+            train_data_loader.batch_size = 1
+            plot_model_input_output(model, train_data_loader, int(sys.argv[2]))
 
     if sys.argv[1] == "test":
         dataloader = UnlabelledDataIterator("images_test")
         plot_model_input_output(model, dataloader, int(sys.argv[2]),labelled=False)
-elif len(sys.argv) == 2:
-    input = keras.Input(batch_shape=(1,96, 96, 1))
-    output = model(input)
-    model_ = keras.Model(inputs=input, outputs=output)
-    if sys.argv[1] == "export":
-        converter = tf.lite.TFLiteConverter.from_keras_model(model_)
-        tf_lite_model = converter.convert()
+else:
+    if loaded:
+        data = UnlabelledDataIterator(test_dir,image_size=(96,96),normalize=False)
+        converter = tf.lite.TFLiteConverter.from_keras_model(model)
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+        converter.representative_dataset = data.representative_data_gen
+        converter.inference_input_type = tf.int8  # or tf.uint8
+        converter.inference_output_type = tf.int8  # or tf.uint8
+        tflite_model = converter.convert()
         with open("model.tflite", "wb") as f:
-            f.write(tf_lite_model)
-        os.system("xxd -i model.tflite > model.h")
+            f.write(tflite_model)
+        os.system("xxd -i model.tflite > model.tflite.h")
+        
