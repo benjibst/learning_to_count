@@ -8,22 +8,43 @@ class ConvLayerRelu():
         self.activation = keras.layers.ReLU()
     def __call__(self, x):
         return self.activation(self.conv(x))
+class ConvLayer():
+    def __init__(self, filters, kernel_size = (3,3), strides = (2,2)):
+        self.conv = keras.layers.Conv2D(
+            filters, kernel_size, strides=strides, padding="same"
+        )
+    def __call__(self, x):
+        return self.conv(x)
 
-#conv1 = ConvLayerRelu(4)
-#conv2 = ConvLayerRelu(8)
-#conv3 = ConvLayerRelu(16)
-#conv4 = ConvLayerRelu(32)
-#up1 = keras.layers.UpSampling2D((2, 2))
-#conv5 = ConvLayerRelu(16,strides=(1,1))
+##96*96*1
+#conv1 = ConvLayer(4)
+##48*48*4
+#conv2 = ConvLayer(8)
+##24*24*8
+#conv3 = ConvLayer(16)
+##12*12*16
+#conv4 = ConvLayer(32)
+##6*6*32
+#up1 = keras.layers.Resizing(12, 12)
+##12*12*32
+#conv5 = ConvLayer(16, strides=(1,1))
+##12*12*16
 #concat1 = keras.layers.Concatenate()
-#up2 = keras.layers.UpSampling2D((2, 2))
-#conv6 = ConvLayerRelu(8,strides=(1,1))
+##12*12*32
+#up2 = keras.layers.Resizing(24, 24)
+##24*24*32
+#conv6 = ConvLayer(8, strides=(1,1))
+##24*24*8
 #concat2 = keras.layers.Concatenate()
-#up3 = keras.layers.UpSampling2D((2, 2))
-#conv7 = ConvLayerRelu(4,strides=(1,1))
+##24*24*16
+#up3 = keras.layers.Resizing(48, 48)
+##48*48*16
+#conv7 = ConvLayer(4, strides=(1,1))
+##48*48*4
 #concat3 = keras.layers.Concatenate()
-#conv8 = ConvLayerRelu(1,kernel_size=(1,1),strides=(1,1))
-
+##48*48*8
+#conv8 = ConvLayer(1, kernel_size=(1,1), strides=(1,1))
+##48*48*1
 #def run_model(x):
 #    c1 = conv1(x)
 #    c2 = conv2(c1)

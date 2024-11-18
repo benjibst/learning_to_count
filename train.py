@@ -69,13 +69,11 @@ if len(sys.argv) == 3:
             input = keras.Input(batch_shape=(None, 96, 96, 1))
             output = run_model(input)
             model = keras.Model(inputs=input, outputs=output)
-        model.compile(optimizer="adam", loss="mse")
+        opt = keras.optimizers.Adam(learning_rate=0.001)
+        model.compile(optimizer=opt, loss="mse")
         model.summary()
         n = data_loader.n_labelled
         
-        print(f"Training on {len(train_data_loader)} images")
-        print(f"Validating on {len(train_data_loader)} images")
-        print(f"Testing on {len(train_data_loader)} images")
 
         if sys.argv[1] == "train":
             print(f"Training model for {int(sys.argv[2])} epochs")
@@ -88,7 +86,7 @@ if len(sys.argv) == 3:
             plot_model_input_output(model, train_data_loader, int(sys.argv[2]))
 
     if sys.argv[1] == "test":
-        dataloader = UnlabelledDataIterator("images_test")
+        dataloader = UnlabelledDataIterator("images_test",image_size=(96,96))
         plot_model_input_output(model, dataloader, int(sys.argv[2]),labelled=False)
 else:
     if loaded:
