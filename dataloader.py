@@ -84,6 +84,23 @@ class PedestrianDataIterator(keras.utils.Sequence):
             X[i,] = img
             y[i,] = generate_heatmap(orig_size,self.heatmap_size, batch_labels[i])
         return X, y
+    def __data_generation_unlabelled(self, img_path):
+        X = np.empty((1,*self.image_size, 1))
+        img = (
+            keras.utils.img_to_array(
+                keras.utils.load_img(
+                    img_path,
+                    target_size=self.image_size,
+                    keep_aspect_ratio=True,
+                    color_mode="grayscale",
+                )
+            )
+        )
+        X[0,] = img
+        return X
+    def representative_data_gen(self):
+        for i in self.image_paths:
+            yield [self.__data_generation_unlabelled(f"{i}").astype(np.float32)]
     
     
 class UnlabelledDataIterator(keras.utils.Sequence):

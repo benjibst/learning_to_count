@@ -6,7 +6,7 @@ import cv2
 import keras
 import sys
 
-out_dir = "images_test"
+out_dir = "images"
 in_dir = "dataraw"
 
 def get_files(path):
@@ -39,7 +39,7 @@ for i in range(len(files)):
             color_mode="grayscale",
         )
         img.save(f"{out_dir}/{filenamejpg}")
-    except:
-        print("Error with file", files[i])
+    except Exception as e:
+        print(f"Error with file {files[i]}", e)
         continue
 print("Done!")

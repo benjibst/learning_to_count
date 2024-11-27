@@ -69,7 +69,7 @@ if len(sys.argv) == 3:
             input = keras.Input(batch_shape=(None, 96, 96, 1))
             output = run_model(input)
             model = keras.Model(inputs=input, outputs=output)
-        opt = keras.optimizers.Adam(learning_rate=0.001)
+        opt = keras.optimizers.Adam(learning_rate=0.002,weight_decay=0.0001)
         model.compile(optimizer=opt, loss="mse")
         model.summary()
         n = data_loader.n_labelled
@@ -82,19 +82,18 @@ if len(sys.argv) == 3:
             model.evaluate(test_data_loader)
             model.save("model.keras")
         else:
-            train_data_loader.batch_size = 1
-            plot_model_input_output(model, train_data_loader, int(sys.argv[2]))
+            test_data_loader.batch_size = 1
+            plot_model_input_output(model, test_data_loader, int(sys.argv[2]))
 
     if sys.argv[1] == "test":
         dataloader = UnlabelledDataIterator("images_test",image_size=(96,96))
         plot_model_input_output(model, dataloader, int(sys.argv[2]),labelled=False)
 else:
     if loaded:
-        data = UnlabelledDataIterator(test_dir,image_size=(96,96),normalize=False)
         converter = tf.lite.TFLiteConverter.from_keras_model(model)
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
         converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-        converter.representative_dataset = data.representative_data_gen
+        converter.representative_dataset = val_data_loader.representative_data_gen
         converter.inference_input_type = tf.int8  # or tf.uint8
         converter.inference_output_type = tf.int8  # or tf.uint8
         tflite_model = converter.convert()

@@ -68,7 +68,8 @@ pool1 = keras.layers.MaxPooling2D((2,2))
 conv21 = ConvLayerRelu(16, kernel_size=(3,3),strides=(1,1))
 conv22 = ConvLayerRelu(32, kernel_size=(3,3),strides=(1,1))
 pool2 = keras.layers.MaxPooling2D((2,2))
-conv31 = ConvLayerRelu(64, kernel_size=(3,3),strides=(1,1))
+conv31 = ConvLayerRelu(32, kernel_size=(3,3),strides=(1,1))
+conv31 = ConvLayerRelu(32, kernel_size=(3,3),strides=(1,1))
 convf = ConvLayerRelu(1, kernel_size=(1,1),strides=(1,1))
 
 
