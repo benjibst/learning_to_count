@@ -193,7 +193,7 @@ def run_tf_models(model, x):
     boxes = out["detection_boxes"].numpy()
     scores = out["detection_scores"].numpy()
     classes = out["detection_classes"].numpy()
-    high_scores = scores>0.5
+    high_scores = scores>0.6
     boxes = boxes[high_scores]
     classes = [LABEL_MAP[int(x)] for x in classes[high_scores]]
     scores = scores[high_scores]

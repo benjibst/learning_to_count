@@ -17,12 +17,15 @@ def remove_labelled(files_to_label):
         train = json.load(f)
     with open(f"{base}/labels/val.json", "r") as f:
         val = json.load(f)
-    for f in test.keys():
-        files_to_label.remove(f)
-    for f in train.keys():
-        files_to_label.remove(f)
-    for f in val.keys():
-        files_to_label.remove(f)
+    for d in (train,val,test):
+        files = list(d.keys())
+        for f in files:
+            if f in files_to_label: #its already labelled
+                files_to_label.remove(f)
+            else: #its not in the images directory
+                print(f"Warning: {f} not in images directory")
+                d.pop(f,"None")
+    
     return train,val,test
 
 def serialize_model_output(detections):

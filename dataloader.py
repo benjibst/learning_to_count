@@ -49,9 +49,10 @@ class PedestrianDataIterator(keras.utils.Sequence):
                 keras.utils.load_img(
                     f"images/{file_path}",
                     color_mode="grayscale",
+                    target_size=self.image_size,
+                    keep_aspect_ratio=True,
                 )
-            )
-            img = cv2.resize(img, self.image_size) / 255.0
+            )/255.0
             img = np.reshape(img, (*self.image_size, 1))
 
 
