@@ -1,14 +1,4 @@
 import tensorflow_hub as hub
-import keras
-import keras_cv
-import tensorflow as tf
-import os
-import cv2
-import ultralytics
-import numpy as np
-import matplotlib.pyplot as plt
-# Apply image detector on a single image.
-
 def run_tf_models(model, x):
     LABEL_MAP = {
         0: "unlabeled",
@@ -215,91 +205,8 @@ def run_tf_models(model, x):
     boxes[:,3] *= img_sz[1]
     return {"boxes":boxes,"scores":scores,"classes":classes}
 
-class EfficientDet:
-    def __init__(self):
-        self.model = hub.load("https://www.kaggle.com/models/tensorflow/efficientdet/TensorFlow2/d0/1")
-    def run(self,x):
-        return run_tf_models(self.model,x)
-    
-class SSDMobileNetV2:
-    def __init__(self):
-        self.model = hub.load("https://www.kaggle.com/models/tensorflow/ssd-mobilenet-v2/TensorFlow2/ssd-mobilenet-v2/1")
-    def run(self,x):
-        return run_tf_models(self.model,x)
-
-class CenterNetHourglass:
-    def __init__(self):
-        self.model = hub.load("https://www.kaggle.com/models/tensorflow/centernet-hourglass/TensorFlow2/1024x1024/1")
-    def run(self,x):
-        x_ = np.zeros((1,1024,1024,3))
-        x_big = cv2.resize(x,(1024,1024))
-        x_[0] = x_big
-        return run_tf_models(self.model,x)
-    
 class FasterRCNNInceptionResnetv2:
     def __init__(self):
         self.model = hub.load("https://www.kaggle.com/models/tensorflow/faster-rcnn-inception-resnet-v2/TensorFlow2/640x640/1")
     def run(self,x):
         return run_tf_models(self.model,x)
-
-def run_yolomodel(model,x):
-    out = model.predict(x)
-    boxes = out[0].boxes.xyxy
-    scores = out[0].boxes.conf
-    names = model.names
-    classes = [names[int(x)] for x in out[0].boxes.cls]
-    return {"boxes":boxes,"scores":scores,"classes":classes}
-class Yolo11x:
-    def __init__(self):
-        self.model = ultralytics.YOLO("yolo11x.pt")
-    def run(self,x):
-        return run_yolomodel(self.model,x)
-class Yolo11n:
-    def __init__(self):
-        self.model = ultralytics.YOLO("yolo11n.pt")
-    def run(self,x):
-        return run_yolomodel(self.model,x)
-class Yolov8l:
-    def __init__(self):
-        self.model = ultralytics.YOLO("yolov8l.pt")
-    def run(self,x):
-        return run_yolomodel(self.model,x)
-        
-base = "."
-images_base = f"{base}/images"
-image_files = [f"{images_base}/{x}" for x in os.listdir(images_base)]
-rand_idx = np.random.permutation(len(image_files))
-curr = 0
-
-def get_random_img_path(n):
-    global curr
-    if curr + n >= len(image_files):
-        curr = 0
-    ret = [image_files[i] for i in rand_idx[curr:curr+n]]
-    curr += n
-    return ret
-
-models = [Yolo11x(),FasterRCNNInceptionResnetv2(),EfficientDet()]
-rows = 3
-keep = True
-img_sz = (640,640)
-while keep:
-    img_paths = get_random_img_path(rows)
-    imgs = [keras.utils.load_img(x,target_size=img_sz) for x in img_paths]
-    print()
-    for i,img in enumerate(imgs):
-        plt.subplot(len(models)+1,rows,i+1)
-        plt.imshow(img)
-    imgs_in = [keras.utils.img_to_array(x) for x in imgs]
-    for m,model in enumerate(models):
-        for i in range(len(imgs)):
-            out = model.run(imgs_in[i])
-            print(out)
-            #copy image and draw boxes
-            img_cp = np.copy(imgs_in[i]).astype(np.uint8)
-            for box,c,s in zip(out["boxes"],out["classes"],out["scores"]):
-                x1,y1,x2,y2 = box
-                cv2.rectangle(img_cp,(int(x1),int(y1)),(int(x2),int(y2)),(0,255,0),2)
-            plt.subplot(len(models)+1,rows,(m+1)*rows+i+1)
-            plt.imshow(img_cp)
-    plt.show()
