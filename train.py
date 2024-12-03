@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from dataloader import PedestrianDataIterator
 from model import run_model
 
-img_dir = "images"
+img_dir = "/home/benni/dev/learning_to_count_data/images"
 loaded = False
 input_sz = (96, 96)
 output_sz = None
@@ -55,9 +55,9 @@ def plot_model_input_output(model, data_loader,n):
     plt.show()
 
 heatmap_div = input_sz[0] // output_sz[0]
-train_loader = PedestrianDataIterator(image_size=(96,96),labels_file="labels/train.json",heatmap_div=heatmap_div)
-val_loader = PedestrianDataIterator(image_size=(96,96),labels_file="labels/val.json",heatmap_div=heatmap_div)
-test_loader = PedestrianDataIterator(image_size=(96,96),labels_file="labels/test.json",heatmap_div=heatmap_div)
+train_loader = PedestrianDataIterator("labels/train.json",img_dir,heatmap_div=heatmap_div)
+val_loader = PedestrianDataIterator("labels/val.json",img_dir,heatmap_div=heatmap_div)
+test_loader = PedestrianDataIterator("labels/test.json",img_dir,heatmap_div=heatmap_div)
 
 if len(sys.argv) == 3:
     if sys.argv[1] not in ["train","test"]:

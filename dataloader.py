@@ -17,10 +17,11 @@ def generate_heatmap(orig_size,heatmap_size, labels):
 
 
 class PedestrianDataIterator(keras.utils.Sequence):
-    def __init__(self, image_size,labels_file, batch_size=8, heatmap_div=4,trained_size=(640,640)):
+    def __init__(self,labels_file,images_path, image_size=(96,96),batch_size=8, heatmap_div=4,trained_size=(640,640)):
         self.batch_size = batch_size
         self.image_size = image_size
         self.orig_size = trained_size
+        self.base_path = images_path
         self.load_labels(labels_file)
         self.heatmap_div = heatmap_div
         self.heatmap_size = (image_size[0] // self.heatmap_div, image_size[1] // self.heatmap_div)
@@ -47,7 +48,7 @@ class PedestrianDataIterator(keras.utils.Sequence):
         for i, file_path in enumerate(batch_image_paths):
             img = keras.utils.img_to_array(
                 keras.utils.load_img(
-                    f"images/{file_path}",
+                    f"{self.base_path}/{file_path}",
                     color_mode="grayscale",
                     target_size=self.image_size,
                     keep_aspect_ratio=True,
