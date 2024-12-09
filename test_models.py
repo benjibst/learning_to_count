@@ -8,7 +8,7 @@ import ultralytics
 import numpy as np
 import matplotlib.pyplot as plt
 # Apply image detector on a single image.
-
+os.environ['TFHUB_CACHE_DIR'] = '/home/benni/tf_cache'
 def run_tf_models(model, x):
     LABEL_MAP = {
         0: "unlabeled",
@@ -249,23 +249,14 @@ def run_yolomodel(model,x):
     names = model.names
     classes = [names[int(x)] for x in out[0].boxes.cls]
     return {"boxes":boxes,"scores":scores,"classes":classes}
-class Yolo11x:
-    def __init__(self):
-        self.model = ultralytics.YOLO("yolo11x.pt")
-    def run(self,x):
-        return run_yolomodel(self.model,x)
-class Yolo11n:
-    def __init__(self):
-        self.model = ultralytics.YOLO("yolo11n.pt")
-    def run(self,x):
-        return run_yolomodel(self.model,x)
-class Yolov8l:
-    def __init__(self):
-        self.model = ultralytics.YOLO("yolov8l.pt")
+
+class Yolo:
+    def __init__(self,yolo_path):
+        self.model = ultralytics.YOLO(yolo_path)
     def run(self,x):
         return run_yolomodel(self.model,x)
         
-base = "."
+base = "/home/benni/dev/learning_to_count_data"
 images_base = f"{base}/images"
 image_files = [f"{images_base}/{x}" for x in os.listdir(images_base)]
 rand_idx = np.random.permutation(len(image_files))
@@ -279,27 +270,34 @@ def get_random_img_path(n):
     curr += n
     return ret
 
-models = [Yolo11x(),FasterRCNNInceptionResnetv2(),EfficientDet()]
+models = [Yolo("yolo11x.pt"),FasterRCNNInceptionResnetv2(),EfficientDet(),SSDMobileNetV2()]
 rows = 3
-keep = True
-img_sz = (640,640)
-while keep:
-    img_paths = get_random_img_path(rows)
-    imgs = [keras.utils.load_img(x,target_size=img_sz) for x in img_paths]
-    print()
-    for i,img in enumerate(imgs):
-        plt.subplot(len(models)+1,rows,i+1)
-        plt.imshow(img)
-    imgs_in = [keras.utils.img_to_array(x) for x in imgs]
-    for m,model in enumerate(models):
-        for i in range(len(imgs)):
-            out = model.run(imgs_in[i])
-            print(out)
-            #copy image and draw boxes
-            img_cp = np.copy(imgs_in[i]).astype(np.uint8)
-            for box,c,s in zip(out["boxes"],out["classes"],out["scores"]):
-                x1,y1,x2,y2 = box
-                cv2.rectangle(img_cp,(int(x1),int(y1)),(int(x2),int(y2)),(0,255,0),2)
-            plt.subplot(len(models)+1,rows,(m+1)*rows+i+1)
-            plt.imshow(img_cp)
-    plt.show()
+img_sz = (500,500)
+while True:
+    try:
+        img_paths = get_random_img_path(rows)
+        imgs = [keras.utils.load_img(x,target_size=img_sz) for x in img_paths]
+        print()
+        for i,img in enumerate(imgs):
+            plt.subplot(len(models)+1,rows,i+1)
+            plt.imshow(img)
+        imgs_in = [keras.utils.img_to_array(x) for x in imgs]
+        for m,model in enumerate(models):
+            for i in range(len(imgs)):
+                out = model.run(imgs_in[i])
+                print(out)
+                #copy image and draw boxes
+                img_cp = np.copy(imgs_in[i]).astype(np.uint8)
+                for box,c,s in zip(out["boxes"],out["classes"],out["scores"]):
+                    x1,y1,x2,y2 = box
+                    if c == "person":
+                        cv2.rectangle(img_cp,(int(x1),int(y1)),(int(x2),int(y2)),(0,0,255),2)
+                    elif c == "car":
+                        cv2.rectangle(img_cp,(int(x1),int(y1)),(int(x2),int(y2)),(0,255,0),2)
+                    else:
+                        cv2.rectangle(img_cp,(int(x1),int(y1)),(int(x2),int(y2)),(255,0,0),2)
+                plt.subplot(len(models)+1,rows,(m+1)*rows+i+1)
+                plt.imshow(img_cp)
+        plt.show()
+    except KeyboardInterrupt:
+        break

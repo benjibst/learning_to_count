@@ -3,12 +3,13 @@ import json
 import random
 import matplotlib.pyplot as plt
 
+base = "/home/benni/dev/learning_to_count_data/"
 labels = {}
-with open("labels/train.json","r") as f:
+with open(f"{base}labels/train.json","r") as f:
     labels.update(json.load(f))
-with open("labels/val.json","r") as f:
+with open(f"{base}labels/val.json","r") as f:
     labels.update(json.load(f))
-with open("labels/test.json","r") as f:
+with open(f"{base}labels/test.json","r") as f:
     labels.update(json.load(f))
 print(f"Loaded {len(labels)} labels")
 
@@ -20,7 +21,7 @@ while True:
         fig,ax = plt.subplots(n_rows,n_rows,figsize=(20,20))
         for i in range(n_rows):
             for j in range(n_rows):
-                img = cv2.resize(cv2.imread(f"images/{rand[i*n_rows+j]}"),(640,640))
+                img = cv2.imread(f"{base}images/{rand[i*n_rows+j]}")
                 curr_label = labels[rand[i*n_rows+j]]
                 for k,cls in enumerate(curr_label["classes"]):
                     x1,y1,x2,y2 = curr_label["boxes"][k]
