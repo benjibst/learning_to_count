@@ -1,9 +1,9 @@
 import os
 import json
 import keras
-from autolabel_models import FasterRCNNInceptionResnetv2
+from autolabel_models import Yolo
 
-
+os.environ["TFHUB_CACHE_DIR"] = "/home/benni/tf_cache"
 base = "/home/benni/dev/learning_to_count_data"
 images_base = f"{base}/images"
 labels_base = f"{base}/labels"
@@ -55,10 +55,10 @@ def save_new_labelled(new_labelled,train,val,test,split = (0.7,0.2,0.1)):
     
 
 train,val,test = remove_labelled(image_files_to_label)
+model = Yolo("yolov8l.pt")
 print(f"Labelling images: {len(image_files_to_label)}/{tot_files}")
 new_labelled = {}
 
-model = FasterRCNNInceptionResnetv2()
 try:
     for i, img_path in enumerate(image_files_to_label):
         img = keras.utils.img_to_array(keras.utils.load_img(f"{images_base}/{img_path}"))

@@ -195,10 +195,8 @@ def run_tf_models(model, x):
         181: "window",
         182: "wood"
     }
-    
-    img_sz = x.shape[:2]
-
-    out = model(x.reshape((1,*x.shape)))
+    x = x.expand_dims(0)
+    out = model(x)
     # filter all detections with score > 0.6 and return the boxes and classes of those detections
     boxes = out["detection_boxes"].numpy()
     scores = out["detection_scores"].numpy()
@@ -276,7 +274,7 @@ img_sz = (500,500)
 while True:
     try:
         img_paths = get_random_img_path(rows)
-        imgs = [keras.utils.load_img(x,target_size=img_sz) for x in img_paths]
+        imgs = [keras.utils.load_img(x) for x in img_paths]
         print()
         for i,img in enumerate(imgs):
             plt.subplot(len(models)+1,rows,i+1)

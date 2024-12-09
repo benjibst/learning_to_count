@@ -1,4 +1,6 @@
-import tensorflow_hub as hub
+#import tensorflow_hub as hub
+import numpy as np
+import ultralytics
 def run_tf_models(model, x):
     LABEL_MAP = {
         0: "unlabeled",
@@ -187,8 +189,8 @@ def run_tf_models(model, x):
     }
     
     img_sz = x.shape[:2]
-
-    out = model(x.reshape((1,*x.shape)))
+    x = np.expand_dims(x,0)
+    out = model(x)
     # filter all detections with score > 0.6 and return the boxes and classes of those detections
     boxes = out["detection_boxes"].numpy()
     scores = out["detection_scores"].numpy()
@@ -210,3 +212,18 @@ class FasterRCNNInceptionResnetv2:
         self.model = hub.load("https://www.kaggle.com/models/tensorflow/faster-rcnn-inception-resnet-v2/TensorFlow2/640x640/1")
     def run(self,x):
         return run_tf_models(self.model,x)
+    
+
+def run_yolomodel(model,x):
+    out = model.predict(x)
+    boxes = out[0].boxes.xyxy
+    scores = out[0].boxes.conf
+    names = model.names
+    classes = [names[int(x)] for x in out[0].boxes.cls]
+    return {"boxes":boxes,"scores":scores,"classes":classes}
+
+class Yolo:
+    def __init__(self,yolo_path):
+        self.model = ultralytics.YOLO(yolo_path)
+    def run(self,x):
+        return run_yolomodel(self.model,x)

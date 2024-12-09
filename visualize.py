@@ -2,6 +2,8 @@ import cv2
 import json
 import random
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import ImageGrid
+import numpy as np
 
 base = "/home/benni/dev/learning_to_count_data/"
 labels = {}
@@ -13,27 +15,38 @@ with open(f"{base}labels/test.json","r") as f:
     labels.update(json.load(f))
 print(f"Loaded {len(labels)} labels")
 
-n_rows = 2
+n_rows = 3
 n= n_rows**2
+indices = np.random.permutation(len(labels))
+curr = 0
+files = list(labels.keys())
 while True:
     try:
-        rand = random.choices(list(labels.keys()),k=n)
-        fig,ax = plt.subplots(n_rows,n_rows,figsize=(20,20))
-        for i in range(n_rows):
-            for j in range(n_rows):
-                img = cv2.imread(f"{base}images/{rand[i*n_rows+j]}")
-                curr_label = labels[rand[i*n_rows+j]]
-                for k,cls in enumerate(curr_label["classes"]):
-                    x1,y1,x2,y2 = curr_label["boxes"][k]
-                    if cls == "person":
-                        color = (0,255,0)
-                    elif cls == "car":
-                        color = (0,0,255)
-                    else:
-                        color = (255,0,0)
-                    cv2.rectangle(img,(int(x1),int(y1)),(int(x2),int(y2)),color,2)
-                ax[i,j].imshow(cv2.cvtColor(img,cv2.COLOR_BGR2RGB))
-                ax[i,j].axis("off")
+        images = []
+        for i in range(n):
+            curr+=1
+            file = files[indices[curr]]
+            label = labels[file]
+            img = cv2.imread(f"{base}images/{file}",cv2.IMREAD_UNCHANGED)
+            for k,cls in enumerate(label["classes"]):
+                x1,y1,x2,y2 = label["boxes"][k]
+                if cls == "person":
+                    color = (0,255,0)
+                elif cls == "car":
+                    color = (255,0,0)
+                else:
+                    color = (0,0,255)
+                cv2.rectangle(img,(int(x1),int(y1)),(int(x2),int(y2)),color,2)
+            images.append(img)
+        fig = plt.figure(figsize=(20., 20.))
+        grid = ImageGrid(fig, 111, 
+                        nrows_ncols=(n_rows, n_rows),  # creates 2x2 grid of axes
+                        axes_pad=0,  # pad between axes
+                        )
+
+        for ax, im in zip(grid, images):
+            ax.imshow(im)
+
         plt.show()
         
     except Exception as e:

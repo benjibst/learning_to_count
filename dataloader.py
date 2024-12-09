@@ -1,6 +1,8 @@
-import cv2,json,keras
+import json,keras
 import numpy as np
+import os
 
+boxes = False
 def generate_heatmap(orig_size,heatmap_size, labels):
     heatmap = np.zeros(heatmap_size)
     divx = orig_size[1] / heatmap_size[1]
@@ -8,26 +10,35 @@ def generate_heatmap(orig_size,heatmap_size, labels):
     for i,cls in enumerate(labels["classes"]):
         if(cls == "person"):
             x1, y1, x2, y2 = labels["boxes"][i]
-            x = (x1 + x2) / 2
-            y = (y1 + y2) / 2
-            x = int(x // divx)
-            y = int(y // divy)
-            heatmap[y, x] = 1
+            if boxes:
+                x1 = int(x1//divx)
+                x2 = int((x2+1)//divx)
+                y1 = int(y1//divy)
+                y2 = int((y2+1)//divy)
+                heatmap[y1:y2,x1:x2] = 1
+            else:
+                x = int((x1 + x2) / 2 / divx)
+                y = int((y1 + y2) / 2 / divy)
+                heatmap[y,x] = 1
     return heatmap
 
-
-class PedestrianDataIterator(keras.utils.Sequence):
+class DataIterator(keras.utils.Sequence):
     def __init__(self,labels_file,images_path, image_size=(96,96),batch_size=8, heatmap_div=4,trained_size=(640,640)):
+        self.unlabelled = False
         self.batch_size = batch_size
         self.image_size = image_size
         self.orig_size = trained_size
         self.base_path = images_path
         self.load_labels(labels_file)
         self.heatmap_div = heatmap_div
-        self.heatmap_size = (image_size[0] // self.heatmap_div, image_size[1] // self.heatmap_div)
+        self.heatmap_size = (int(image_size[0] / self.heatmap_div), int(image_size[1] / self.heatmap_div))
         super().__init__()
 
     def load_labels(self,labels_file):
+        if labels_file is None:
+            self.unlabelled = True
+            self.image_paths = [f"{self.base_path}/{x}" for x in os.listdir(self.base_path)]
+            return
         with open(labels_file,"r") as f:
             self.labels_dict = json.load(f)
         self.image_paths = list(self.labels_dict.keys())
@@ -38,6 +49,8 @@ class PedestrianDataIterator(keras.utils.Sequence):
 
     def __getitem__(self, index):
         batch_image_paths = self.image_paths[index * self.batch_size : (index + 1) * self.batch_size]
+        if(self.unlabelled):
+            return self.__data_generation_unlabelled(batch_image_paths[0])
         batch_labels = self.labels[index * self.batch_size : (index + 1) * self.batch_size]
         return self.__data_generation(batch_image_paths, batch_labels)
 
