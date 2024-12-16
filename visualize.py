@@ -4,7 +4,7 @@ import random
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
 import numpy as np
-if False:
+if True:
     base = "/home/benni/dev/learning_to_count_data/"
 else: 
     base = "/home/benjamin/learning_to_count_data/"

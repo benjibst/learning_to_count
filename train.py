@@ -6,13 +6,13 @@ import sys
 
 # keras backend jax
 os.environ["KERAS_BACKEND"] = "jax"
-#os.environ["JAX_PLATFORM_NAME"] = "gpu"
+os.environ["JAX_PLATFORM_NAME"] = "gpu"
 import keras
 import matplotlib.pyplot as plt
 from dataloader import DataIterator
 from model import FomoModel as model_imp
 
-if False:
+if True:
     img_dir = "/home/benni/dev/learning_to_count_data/images"
     labels_dir = "/home/benni/dev/learning_to_count_data/labels"
     test_dir = "/home/benni/dev/learning_to_count_data/test"
@@ -49,16 +49,20 @@ def plot_img_grid(images):
 def plot_model_input_output(model, data_loader,n):
     if n % 2 != 0:
         n += 1
-    images_heatmaps = []
-    choose = random.sample(range(len(data_loader)), n)
-    for i in choose:
-        img, heatmap = data_loader.__getitem__(i)
-        images_heatmaps.append(img[0])
-        heatmap_pred = model.predict(img)[0]
-        images_heatmaps.append(heatmap[0])
-        images_heatmaps.append(heatmap_pred)
-    plot_img_grid(images_heatmaps)
-    plt.show()
+    while True:
+        try:
+            images_heatmaps = []
+            choose = random.sample(range(len(data_loader)), n)
+            for i in choose:
+                img, heatmap = data_loader.__getitem__(i)
+                images_heatmaps.append(img[0])
+                heatmap_pred = model.predict(img)[0]
+                images_heatmaps.append(heatmap[0])
+                images_heatmaps.append(heatmap_pred)
+            plot_img_grid(images_heatmaps)
+            plt.show()
+        except KeyboardInterrupt:
+            break
 def plot_model_output(model, data_loader,n):
     if n % 2 != 0:
         n += 1
@@ -90,7 +94,10 @@ if len(sys.argv) == 3:
 
     if sys.argv[1] == "train":
         print(f"Training model for {int(sys.argv[2])} epochs")
-        model.fit(train_loader, epochs=int(sys.argv[2]), validation_data=val_loader)
+        try:
+            model.fit(train_loader, epochs=int(sys.argv[2]), validation_data=val_loader)
+        except KeyboardInterrupt:
+            print("Training interrupted")
         print("Testing model")
         model.evaluate(test_loader)
         model.save("model.keras")
