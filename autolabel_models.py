@@ -1,4 +1,3 @@
-#import tensorflow_hub as hub
 import numpy as np
 import ultralytics
 def run_tf_models(model, x):
@@ -209,6 +208,7 @@ def run_tf_models(model, x):
 
 class FasterRCNNInceptionResnetv2:
     def __init__(self):
+        import tensorflow_hub as hub
         self.model = hub.load("https://www.kaggle.com/models/tensorflow/faster-rcnn-inception-resnet-v2/TensorFlow2/640x640/1")
     def run(self,x):
         return run_tf_models(self.model,x)

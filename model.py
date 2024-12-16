@@ -17,9 +17,9 @@ class ConvLayerLeakyRelu():
     def __call__(self, x):
         return self.activation(self.conv(x))
 class ConvLayer():
-    def __init__(self, filters, kernel_size = (3,3), strides = (2,2)):
+    def __init__(self, filters, kernel_size = (3,3), strides = (2,2),activation = "linear"):
         self.conv = keras.layers.Conv2D(
-            filters, kernel_size, strides=strides, padding="same"
+            filters, kernel_size, strides=strides, padding="same",activation=activation
         )
     def __call__(self, x):
         return self.conv(x)
@@ -42,7 +42,7 @@ class FomoModel:
         self.up3 = keras.layers.Resizing(img_sz[0]//2, img_sz[1]//2)
         self.conv7 = self.convtype(n_kernels, strides=(1,1))
         self.concat3 = keras.layers.Concatenate()
-        self.conv8 = self.convtype(1, kernel_size=(1,1), strides=(1,1))
+        self.conv8 = self.convtype(1, kernel_size=(1,1), strides=(1,1),activation="sigmoid")
     def run(self,x):
         c1 = self.conv1(x)
         c2 = self.conv2(c1)

@@ -6,15 +6,20 @@ import sys
 
 # keras backend jax
 os.environ["KERAS_BACKEND"] = "jax"
-os.environ["JAX_PLATFORM_NAME"] = "gpu"
+#os.environ["JAX_PLATFORM_NAME"] = "gpu"
 import keras
 import matplotlib.pyplot as plt
 from dataloader import DataIterator
 from model import FomoModel as model_imp
 
-img_dir = "/home/benni/dev/learning_to_count_data/images"
-labels_dir = "/home/benni/dev/learning_to_count_data/labels"
-test_dir = "/home/benni/dev/learning_to_count_data/test"
+if False:
+    img_dir = "/home/benni/dev/learning_to_count_data/images"
+    labels_dir = "/home/benni/dev/learning_to_count_data/labels"
+    test_dir = "/home/benni/dev/learning_to_count_data/test"
+else:
+    img_dir = "/home/benjamin/learning_to_count_data/images"
+    labels_dir = "/home/benjamin/learning_to_count_data/labels"
+    test_dir = "/home/benjamin/learning_to_count_data/test"
 loaded = False
 input_sz = (96, 96)
 output_sz = None

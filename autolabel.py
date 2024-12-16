@@ -3,8 +3,11 @@ import json
 import keras
 from autolabel_models import Yolo
 
-os.environ["TFHUB_CACHE_DIR"] = "/home/benni/tf_cache"
-base = "/home/benni/dev/learning_to_count_data"
+if False:
+    base = "/home/benni/dev/learning_to_count_data"
+else:
+    base = "/home/benjamin/learning_to_count_data"
+
 images_base = f"{base}/images"
 labels_base = f"{base}/labels"
 image_files_to_label = {f"{x}" for x in os.listdir(images_base)}
