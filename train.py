@@ -21,7 +21,7 @@ else:
     labels_dir = "/home/benjamin/learning_to_count_data/labels"
     test_dir = "/home/benjamin/learning_to_count_data/test"
 loaded = False
-input_sz = (96, 96)
+input_sz = (224, 224)
 output_sz = None
 if os.path.exists("model.keras"):
     print("Loading model from file")
@@ -33,7 +33,7 @@ if os.path.exists("model.keras"):
 else:
     print("Creating new model")
     input = keras.Input(batch_shape=(None, *input_sz, 1))
-    mod = model_imp(img_sz=input_sz,n_kernels=32)
+    mod = model_imp(img_sz=input_sz,n_kernels=4)
     output = mod.run(input)
     model = keras.Model(inputs=input, outputs=output)
     output_sz = output.shape[1:]

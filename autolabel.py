@@ -1,7 +1,7 @@
 import os
 import json
 import keras
-from autolabel_models import Yolo
+from autolabel_models import FasterRCNNInceptionResnetv2
 
 if False:
     base = "/home/benni/dev/learning_to_count_data"
@@ -21,6 +21,10 @@ def remove_labelled(files_to_label):
         train = json.load(f)
     with open(f"{labels_base}/val.json", "r") as f:
         val = json.load(f)
+    #for d in (train,val,test):
+    #    files = [x for x in list(d.keys()) if x.startswith("kaggle")]
+    #    for f in files:
+    #        d.pop(f,None)
     for d in (train,val,test):
         files = list(d.keys())
         for f in files:
@@ -28,7 +32,7 @@ def remove_labelled(files_to_label):
                 files_to_label.remove(f)
             else: #its not in the images directory
                 print(f"Warning: {f} not in images directory")
-                d.pop(f,"None")
+                d.pop(f,None)
     
     return train,val,test
 
@@ -58,7 +62,7 @@ def save_new_labelled(new_labelled,train,val,test,split = (0.7,0.2,0.1)):
     
 
 train,val,test = remove_labelled(image_files_to_label)
-model = Yolo("yolov8l.pt")
+model = FasterRCNNInceptionResnetv2()   
 print(f"Labelling images: {len(image_files_to_label)}/{tot_files}")
 new_labelled = {}
 
