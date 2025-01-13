@@ -1,26 +1,25 @@
 import cv2
 import json
-import random
+import os
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
 import numpy as np
-if True:
-    base = "/home/benni/dev/learning_to_count_data/"
-else: 
-    base = "/home/benjamin/learning_to_count_data/"
+
+base = os.environ.get("LTC_DATA")
+
 labels = {}
-with open(f"{base}labels/train.json","r") as f:
+with open(f"{base}/labels/train.json","r") as f:
     labels.update(json.load(f))
-with open(f"{base}labels/val.json","r") as f:
+with open(f"{base}/labels/val.json","r") as f:
     labels.update(json.load(f))
-with open(f"{base}labels/test.json","r") as f:
+with open(f"{base}/labels/test.json","r") as f:
     labels.update(json.load(f))
 print(f"Loaded {len(labels)} labels")
 
 n_rows = 2
 n= n_rows**2
 curr = 0
-files = [x for x in list(labels.keys()) if x.startswith("kaggle")]
+files = [x for x in list(labels.keys())]
 indices = np.random.permutation(len(files))
 while True:
     try:
@@ -29,7 +28,7 @@ while True:
             curr+=1
             file = files[indices[curr]]
             label = labels[file]
-            img = cv2.imread(f"{base}images/{file}")
+            img = cv2.imread(f"{base}/images/{file}")
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             for k,cls in enumerate(label["classes"]):
                 x1,y1,x2,y2 = label["boxes"][k]

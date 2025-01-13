@@ -1,12 +1,11 @@
 import os
 import json
+os.environ["KERAS_BACKEND"] = "jax"
+os.environ["JAX_PLATFORM_NAME"] = "gpu"
 import keras
-from autolabel_models import FasterRCNNInceptionResnetv2
+from autolabel_models import Yolo
 
-if False:
-    base = "/home/benni/dev/learning_to_count_data"
-else:
-    base = "/home/benjamin/learning_to_count_data"
+base = os.environ.get("LTC_DATA")
 
 images_base = f"{base}/images"
 labels_base = f"{base}/labels"
@@ -21,10 +20,11 @@ def remove_labelled(files_to_label):
         train = json.load(f)
     with open(f"{labels_base}/val.json", "r") as f:
         val = json.load(f)
-    for d in (train,val,test):
-        files = [x for x in list(d.keys()) if x.startswith("kaggle")]
-        for f in files:
-            d.pop(f,None)
+    #Remove images to label them again, can use a different model for labelling
+    #for d in (train,val,test):
+    #    files = [x for x in list(d.keys()) if x.startswith("agdao")]
+    #    for f in files:
+    #        d.pop(f,None)
     for d in (train,val,test):
         files = list(d.keys())
         for f in files:
@@ -62,7 +62,7 @@ def save_new_labelled(new_labelled,train,val,test,split = (0.7,0.2,0.1)):
     
 
 train,val,test = remove_labelled(image_files_to_label)
-model = FasterRCNNInceptionResnetv2()  
+model = Yolo("yolo11x.pt")  
 print(f"Labelling images: {len(image_files_to_label)}/{tot_files}")
 new_labelled = {}
 

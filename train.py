@@ -8,14 +8,11 @@ import matplotlib.pyplot as plt
 from dataloader import DataIterator
 from model import FomoModel as model_imp
 
-if False:
-    img_dir = "/home/benni/dev/learning_to_count_data/images"
-    labels_dir = "/home/benni/dev/learning_to_count_data/labels"
-    test_dir = "/home/benni/dev/learning_to_count_data/test"
-else:
-    img_dir = "/home/benjamin/learning_to_count_data/images"
-    labels_dir = "/home/benjamin/learning_to_count_data/labels"
-    test_dir = "/home/benjamin/learning_to_count_data/test"
+base = os.environ.get("LTC_DATA")
+img_dir = f"{base}/images"
+labels_dir = f"{base}/labels"
+test_dir = f"{base}/test"
+
 loaded = False
 input_sz = (224, 224)
 output_sz = None
