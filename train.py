@@ -71,7 +71,7 @@ def plot_model_output(model, data_loader,n):
     plt.show()
 
 heatmap_div = input_sz[0] / output_sz[0]
-train_loader = DataIterator(f"{labels_dir}/train.json",img_dir,heatmap_div=heatmap_div,image_size=input_sz)
+train_loader = DataIterator(f"{labels_dir}/train.json",img_dir,heatmap_div=heatmap_div,image_size=input_sz,batch_size=32)
 val_loader = DataIterator(f"{labels_dir}/val.json",img_dir,heatmap_div=heatmap_div,image_size=input_sz)
 test_loader = DataIterator(f"{labels_dir}/test.json",img_dir,heatmap_div=heatmap_div,image_size=input_sz)
 nyctest = DataIterator(None,test_dir,heatmap_div=heatmap_div,image_size=input_sz)
@@ -82,7 +82,7 @@ if len(sys.argv) == 3:
         print("  python train.py train <epochs>")
         print("  python train.py test <n_images>")
 
-    opt = keras.optimizers.Adam(learning_rate=0.005,weight_decay=0.0)
+    opt = keras.optimizers.Adam(learning_rate=0.001,weight_decay=1e-6)
     model.compile(optimizer=opt, loss="mse")
     model.summary()
 
@@ -99,7 +99,7 @@ if len(sys.argv) == 3:
         test_loader.batch_size = 1
         nyctest.batch_size = 1
         #plot_model_output(model, nyctest, int(sys.argv[2]))
-        plot_model_input_output(model, test_loader, int(sys.argv[2]))
+        plot_model_input_output(model, train_loader, int(sys.argv[2]))
 
 elif len(sys.argv) == 2 and sys.argv[1] == "tflite":
     if not loaded:

@@ -2,7 +2,7 @@ import json,keras
 import numpy as np
 import os
 
-boxes = False
+boxes = True
 def generate_heatmap(orig_size,heatmap_size, labels):
     heatmap = np.zeros(heatmap_size)
     divx = orig_size[1] / heatmap_size[1]
@@ -11,11 +11,11 @@ def generate_heatmap(orig_size,heatmap_size, labels):
         if(cls == "person"):
             x1, y1, x2, y2 = labels["boxes"][i]
             if boxes:
-                x1 = int(x1//divx)
-                x2 = int((x2+1)//divx)
-                y1 = int(y1//divy)
-                y2 = int((y2+1)//divy)
-                heatmap[y1:y2,x1:x2] = 1
+                x1target = int((x1+0.25*(x2-x1))/divx)
+                x2target = int((x2-0.25*(x2-x1))/divx)
+                y1target = int((y1+0.25*(y2-y1))/divy)
+                y2target = int((y2-0.25*(y2-y1))/divy)
+                heatmap[y1target:y2target,x1target:x2target] = 1
             else:
                 x = int((x1 + x2) / 2 / divx)
                 y = int((y1 + y2) / 2 / divy)
