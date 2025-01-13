@@ -2,17 +2,13 @@
 import os
 import random
 import sys
-
-
-# keras backend jax
-os.environ["KERAS_BACKEND"] = "jax"
-os.environ["JAX_PLATFORM_NAME"] = "gpu"
+os.environ["KERAS_BACKEND"] = "tensorflow"
 import keras
 import matplotlib.pyplot as plt
 from dataloader import DataIterator
 from model import FomoModel as model_imp
 
-if True:
+if False:
     img_dir = "/home/benni/dev/learning_to_count_data/images"
     labels_dir = "/home/benni/dev/learning_to_count_data/labels"
     test_dir = "/home/benni/dev/learning_to_count_data/test"
@@ -40,6 +36,7 @@ else:
 
 
 def plot_img_grid(images):
+    plt.tight_layout()
     columns = 2
     rows = len(images) // (columns * 3)
     for i in range(1, columns*3 * rows + 1):
@@ -113,7 +110,7 @@ elif len(sys.argv) == 2 and sys.argv[1] == "tflite":
     import tensorflow as tf
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
-    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8 ]
     converter.representative_dataset = test_loader.representative_data_gen
     converter.inference_input_type = tf.int8  # or tf.uint8
     converter.inference_output_type = tf.int8  # or tf.uint8

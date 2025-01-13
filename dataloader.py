@@ -79,7 +79,7 @@ class DataIterator(keras.utils.Sequence):
         img = (
             keras.utils.img_to_array(
                 keras.utils.load_img(
-                    img_path,
+                    f"{self.base_path}/{img_path}",
                     target_size=self.image_size,
                     keep_aspect_ratio=True,
                     color_mode="grayscale",
@@ -91,5 +91,5 @@ class DataIterator(keras.utils.Sequence):
     
     def representative_data_gen(self):
         for i in self.image_paths:
-            yield [self.__data_generation_unlabelled(f"images/{i}").astype(np.float32)]
+            yield [self.__data_generation_unlabelled(f"{i}").astype(np.float32)]
     

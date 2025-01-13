@@ -3,7 +3,7 @@ import json
 import keras
 from autolabel_models import FasterRCNNInceptionResnetv2
 
-if True:
+if False:
     base = "/home/benni/dev/learning_to_count_data"
 else:
     base = "/home/benjamin/learning_to_count_data"

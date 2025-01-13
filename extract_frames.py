@@ -1,13 +1,15 @@
 import os
 from multiprocessing import Pool
 import time
+import sys
 if False:
     base = "/home/benni/dev/learning_to_count_data/vids"
     out = "/home/benni/dev/learning_to_count_data/images"
 else:
     base = "/home/benjamin/learning_to_count_data/vids"
     out = "/home/benjamin/learning_to_count_data/images"   
-files =  [x for x in os.listdir(base) if x.endswith(".mp4")]
+filter = sys.argv[1]
+files =  [x for x in os.listdir(base) if filter in x]
 files = [x for x in files if os.stat(f"{base}/{x}").st_ctime > time.time()-0.3*3600]
 print(files)
 

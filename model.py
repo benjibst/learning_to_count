@@ -42,7 +42,7 @@ class FomoModel:
         self.up3 = keras.layers.Resizing(img_sz[0]//2, img_sz[1]//2)
         self.conv7 = self.convtype(n_kernels, strides=(1,1))
         self.concat3 = keras.layers.Concatenate()
-        self.conv8 = self.convtype(1, kernel_size=(1,1), strides=(1,1),activation="sigmoid")
+        self.conv8 = ConvLayer(1, kernel_size=(1,1), strides=(1,1),activation="sigmoid")
     def run(self,x):
         c1 = self.conv1(x)
         c2 = self.conv2(c1)
@@ -63,15 +63,15 @@ class FomoModel:
 class CustomModel:
     convtype = ConvLayerRelu
     def __init__(self,**kwargs):
-        self.conv11 = self.convtype(16, kernel_size=(3,3),strides=(1,1))
-        self.conv12 = self.convtype(16, kernel_size=(3,3),strides=(1,1))
+        self.conv11 = self.convtype(16, strides=(1,1))
+        self.conv12 = self.convtype(16,strides=(1,1))
         self.pool1 = keras.layers.AvgPool2D((2,2))
-        self.conv21 = self.convtype(32, kernel_size=(3,3),strides=(1,1))
-        self.conv22 = self.convtype(32, kernel_size=(3,3),strides=(1,1))
+        self.conv21 = self.convtype(32,strides=(1,1))
+        self.conv22 = self.convtype(32,strides=(1,1))
         self.pool2 = keras.layers.AvgPool2D((2,2))
-        self.conv31 = self.convtype(64, kernel_size=(3,3),strides=(1,1))
-        self.conv32 = self.convtype(64, kernel_size=(3,3),strides=(1,1))
-        self.convf = self.convtype(1, kernel_size=(1,1),strides=(1,1))
+        self.conv31 = self.convtype(64,strides=(1,1))
+        self.conv32 = self.convtype(64,strides=(1,1))
+        self.convf = ConvLayer(1, kernel_size=(1,1),strides=(1,1),activation="sigmoid")
     def run(self,x):
         c11 = self.conv11(x)
         c12 = self.conv12(c11)
